@@ -17,6 +17,11 @@ void matrix_init() {
     ledMatrix.commit();
 }
 
+void matrix_update() {
+
+  ledMatrix.commit();
+}
+
 void matrix_clear() {
 
   ledMatrix.clear();
@@ -25,11 +30,6 @@ void matrix_clear() {
 void matrix_setPixel(int x, int y) {
 
   ledMatrix.setPixel(x, y);
-}
-
-void matrix_commit() {
-
-  ledMatrix.commit();
 }
 
 /*
