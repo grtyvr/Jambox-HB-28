@@ -24,18 +24,17 @@
 #define seq_set_osc2_end    7
 #define seq_set_osc2_spd    8
 #define seq_set_osc2_vol    9
-#define seq_set_osc1_wav    10
-#define seq_set_osc1_oct    11
-#define seq_set_osc1_sem    12
+#define seq_set_osc2_wav    10
+#define seq_set_osc2_oct    11
+#define seq_set_osc2_sem    12
 #define seq_set_arp_typ     13
 #define seq_set_arp_oct     14
 #define seq_set_arp_spd     15
 #define seq_set_chord       16
 
-char seq_track_names[8, 12] = { "Osc 1 Not", "Osc 1 Oct", "Osc 1 Len", "Osc 1 Efx", "Osc 1 Not", "Osc 1 Oct" ,"Osc 1 Len", "Osc 1 Efx" };
-char seq_function_names[10, 12] = { "Rand Track", "Rand Osc", "Rand All", "Clear Track", "Clear Osc", "Clear All", "Copy Track", "Copy Osc", "Paste", "Rnd Arp" };
-char seq_setting_names[16, 12] = { 
-    "BPM", "Osc1 End Type", "Osc1 Step Len", "Osc1 Volume", "Osc1 Wave", "Osc1 Semi", "Osc2 End Type", "Osc2 Step Len", 
+char seq_track_names[8][12] = { "Osc 1 Not", "Osc 1 Oct", "Osc 1 Len", "Osc 1 Efx", "Osc 1 Not", "Osc 1 Oct" ,"Osc 1 Len", "Osc 1 Efx" };
+char seq_function_names[10][12] = { "Rand Track", "Rand Osc", "Rand All", "Clear Track", "Clear Osc", "Clear All", "Copy Track", "Copy Osc", "Paste", "Rnd Arp" };
+char seq_setting_names[16][16] = { "BPM", "Osc1 End Type", "Osc1 Step Len", "Osc1 Volume", "Osc1 Wave", "Osc1 Semi", "Osc2 End Type", "Osc2 Step Len", 
     "Osc2 Volume", "Osc2 Wave", "Osc2 Semi", "Arp Type", "Arp Octives", "Arp Speed", "Arp Step Len", "Chord" };
 
 char seq_set_osc_end_vals[2][8] = { "Loop", "Bounce" };
@@ -133,10 +132,10 @@ void seq_update_normal_mode() {
     }
 
     // if they are changing vals, show which on screen
-    if (newVal != steps[currentStep, currentTrack]) {
+    if (newVal != steps[currentStep][currentTrack]) {
 
         // TODO: show new value on oled
-        steps[currentStep, currentTrack] = newVal;
+        steps[currentStep][currentTrack] = newVal;
     }
 
     // have they tweaked the function knob?
@@ -159,7 +158,7 @@ void seq_update_function_mode() {
 
     int newFunction = (int)(input_pot5() / 102.3);
     int newVal = input_pot1();
-
+/*
     if (input_button1() == HIGH)
         newFunction --;
 
@@ -202,10 +201,10 @@ void seq_update_function_mode() {
     }
 
     // if they are changing vals, show which on screen
-    if (newVal != steps[currentStep, currentTrack]) {
+    if (newVal != steps[currentStep][currentTrack]) {
 
         // TODO: show new value on oled
-        steps[currentStep, currentTrack] = newVal;
+        steps[currentStep][currentTrack] = newVal;
     }
 
     // have they tweaked the function knob?
@@ -218,6 +217,7 @@ void seq_update_function_mode() {
 
     // TODO: show steps with any values as dots on selected track
     // TODO: show steps as red on every unselected track
+    */
 }
 
 void seq_activate_function(int which) {
@@ -340,7 +340,7 @@ int getActualSettingValue(int which, int rawValue) {
 
 int getActualTrackValue(int track, int step) {
 
-    int rawValue = steps[step, track];
+    int rawValue = steps[step][track];
 
     switch(track) {
 
