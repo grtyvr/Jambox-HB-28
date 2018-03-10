@@ -1,25 +1,7 @@
 # Jambox-HB-28
-http://www.iotsharing.com/2017/05/how-to-use-arduino-esp32-to-display-oled.html
+I'm attempting to use the synthesis from the Auduino project for this.
 
-esp32 datasheet
-https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
+Almost nothing is done yet. The synthesis ( ported over from the Auduino project ) is kid of working, but I'm having issues with the bitrate or something so it sounds pretty nasty.
 
-I2S
-http://www.iotsharing.com/2017/07/how-to-use-arduino-esp32-i2s-to-play-wav-music-from-sdcard.html
-https://esp-idf.readthedocs.io/en/v2.0/api/peripherals/i2s.html
-
-saving data
-http://www.iotsharing.com/2017/06/how-to-use-preferences-to-backup-data-in-main-flash-when-power-off.html
-
-timer
-http://www.iotsharing.com/2017/06/how-to-use-interrupt-timer-in-arduino-esp32.html
-
-multicore
-http://www.iotsharing.com/2017/07/how-to-configure-esp32-multicore-arduino-esp32.html
-
-sd card
-http://www.iotsharing.com/2017/05/how-to-use-arduino-esp32-to-store-data-to-sdcard.html
-
-oled
-http://www.iotsharing.com/2017/05/how-to-use-arduino-esp32-to-display-oled.html
-
+Alot of sequencer code has been written, but none of it is finished or running yet.
+I added an Oled screen to mine, although I haven't started implimenting it yet.
