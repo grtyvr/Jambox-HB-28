@@ -305,6 +305,11 @@ void sequencer_update_setting_mode() {
 
 }
 
+void sequencer_activate_setting(int which) {
+
+    // TODO: activate selected function
+}
+
 void sequencer_change_mode(int which) {
 
     switch(which) {
