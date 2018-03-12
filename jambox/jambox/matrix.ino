@@ -1,5 +1,5 @@
 #include <SPI.h>
-#include "LedMatrix.h"
+#include "LedMatrix.h" // http://www.iotsharing.com/2017/05/how-to-use-arduino-esp32-to-display-spi-led-matrix.html
 
 //LED Matrix Pins
 #define NUMBER_OF_DEVICES 4 

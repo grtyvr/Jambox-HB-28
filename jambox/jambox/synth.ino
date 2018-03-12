@@ -1,17 +1,11 @@
-//#include <stdio.h>
-//#include "freertos/FreeRTOS.h"
-//#include "freertos/task.h"
-//#include "driver/i2s.h"
-//#include "esp_system.h"
-
 #include "esp32-hal-timer.h"
 #include "driver/i2s.h"
 
 #define SAMPLE_RATE                 16000
-#define I2S_NUM                     0
-#define TIMER_NO                    0
-#define ESP32_F_CPU                 80000000  // the speed of the processor
-#define AUDIO_INTERRUPT_PRESCALER   80     
+#define I2S_PORT_NUMBER             0
+#define TIMER_NUMBER                0
+#define ESP32_F_CPU                 80000000  // the actual speed of the processor
+#define AUDIO_INTERRUPT_PRESCALER   80
 
 volatile uint16_t syncPhaseAcc;
 volatile uint16_t syncPhaseInc;
@@ -28,11 +22,15 @@ hw_timer_t * timer = NULL;
 
 void IRAM_ATTR SIGNAL() {
 
+  // signal code thanks to the AUDUINO project! ( more code at the bottom from there as well. )
+  // https://code.google.com/archive/p/tinkerit/wikis/Auduino.wiki
+
   uint8_t value;
   uint16_t output;
 
   syncPhaseAcc += syncPhaseInc;
   if (syncPhaseAcc < syncPhaseInc) {
+
     // Time to start the next grain
     grainPhaseAcc = 0;
     grainAmp = 0x7fff;
@@ -46,13 +44,18 @@ void IRAM_ATTR SIGNAL() {
 
   // Convert phase into a triangle wave
   value = (grainPhaseAcc >> 7) & 0xff;
-  if (grainPhaseAcc & 0x8000) value = ~value;
+  if (grainPhaseAcc & 0x8000) 
+    value = ~value;
+
   // Multiply by current grain amplitude to get sample
   output = value * (grainAmp >> 8);
 
   // Repeat for second grain
   value = (grain2PhaseAcc >> 7) & 0xff;
-  if (grain2PhaseAcc & 0x8000) value = ~value;
+
+  if (grain2PhaseAcc & 0x8000) 
+    value = ~value;
+
   output += value * (grain2Amp >> 8);
 
   // Make the grain amplitudes decay by a factor every sample (exponential decay)
@@ -61,47 +64,63 @@ void IRAM_ATTR SIGNAL() {
 
   // Scale output to the available range, clipping if necessary
   output >>= 9;
-  if (output > 255) output = 255;
 
-  i2s_push_sample((i2s_port_t)I2S_NUM, (const char*)&output, 0);
+  if (output > 255) 
+    output = 255;
+
+  i2s_push_sample(
+    (i2s_port_t)I2S_PORT_NUMBER, 
+    (const char*)&output, 
+    0);
 }
 
 void synth_init() {
 
   // setup i2s
   i2s_config_t i2s_config = {
-      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
-      .sample_rate = SAMPLE_RATE,
-      .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-      .channel_format = I2S_CHANNEL_FMT_ALL_RIGHT,
-      .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
-      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-      .dma_buf_count = 8,
-      .dma_buf_len = 64,
-      .use_apll = true
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),  // transmitting
+      .sample_rate = SAMPLE_RATE,                           // sample rate
+      .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,         // 16 bits per sample
+      .channel_format = I2S_CHANNEL_FMT_ALL_RIGHT,          // mono
+      .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB), // typical I2S format, Most significant bit first
+      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,             // higher priority
+      .dma_buf_count = 8,                                   // honestly, these are just whatever I found initially.
+      .dma_buf_len = 64,                                    // i'm not sure we're even using the DMA here
+      .use_apll = true                                      // this seems to be for a more stable clock output
     };
     
   i2s_pin_config_t pin_config = {
-      .bck_io_num = 26, //this is BCK pin
-      .ws_io_num = 25, // this is LRCK pin
-      .data_out_num = 22, // this is DATA output pin
-      .data_in_num = -1   //Not used
+      .bck_io_num = 26,                                     // this is BCK pin, data clock
+      .ws_io_num = 25,                                      // this is LRCK pin, 'word strobe' / lrck / 'word clock'. This is for switching between left / right channels
+      .data_out_num = 22,                                   // this is DATA output pin, actual audio serial audio data out
+      .data_in_num = -1                                     // Not used
   };
 
-  i2s_driver_install((i2s_port_t)I2S_NUM, &i2s_config, 0, NULL);
-  i2s_set_pin((i2s_port_t)I2S_NUM, &pin_config);
-  //i2s_set_clk((i2s_port_t)I2S_NUM, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO);
-  //i2s_start((i2s_port_t)I2S_NUM);
+  // instantiate one of the I2S drivers
+  i2s_driver_install((i2s_port_t)I2S_PORT_NUMBER, &i2s_config, 0, NULL);
 
-  Serial.println("i2s setup");
+  // give it some pins to write to
+  i2s_set_pin((i2s_port_t)I2S_PORT_NUMBER, &pin_config);
 
-  // setup time
-  timer = timerBegin(TIMER_NO, AUDIO_INTERRUPT_PRESCALER, true);
-  timerAttachInterrupt(timer, &SIGNAL, true);
-  timerAlarmWrite(timer, ESP32_F_CPU / AUDIO_INTERRUPT_PRESCALER / SAMPLE_RATE, true);
+  // setup timer to run our audio synthesis at a fixed rate
+  timer = 
+    timerBegin(
+      TIMER_NUMBER, 
+      AUDIO_INTERRUPT_PRESCALER, 
+      true);
+
+  timerAttachInterrupt(
+    timer, 
+    &SIGNAL, 
+    true);
+
+  timerAlarmWrite(
+    timer, 
+    ESP32_F_CPU / AUDIO_INTERRUPT_PRESCALER / SAMPLE_RATE,  // this looks complicated, but it just calculates the number of microseconds needed to run at our sample rate
+    true);
+
+  // alright, les gooooooo!
   timerAlarmEnable(timer);
-
-  Serial.println("timer setup");
 }
 
 void synth_update() {
@@ -132,6 +151,7 @@ uint16_t antilogTable[] = {
   45842,45348,44859,44376,43898,43425,42958,42495,42037,41584,41136,40693,40255,39821,39392,38968,
   38548,38133,37722,37316,36914,36516,36123,35734,35349,34968,34591,34219,33850,33486,33125,32768
 };
+
 uint16_t mapPhaseInc(uint16_t input) {
   return (antilogTable[input & 0x3f]) >> (input >> 6);
 }
@@ -148,6 +168,7 @@ uint16_t midiTable[] = {
   10440,11060,11718,12415,13153,13935,14764,15642,16572,17557,18601,19708,20879,
   22121,23436,24830,26306
 };
+
 uint16_t mapMidi(uint16_t input) {
   return (midiTable[(1023-input) >> 3]);
 }
@@ -164,4 +185,3 @@ uint16_t mapPentatonic(uint16_t input) {
   uint8_t value = (1023-input) / (1024/53);
   return (pentatonicTable[value]);
 }
-
