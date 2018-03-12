@@ -7,16 +7,16 @@
 #define ESP32_F_CPU                 80000000  // the actual speed of the processor
 #define AUDIO_INTERRUPT_PRESCALER   80
 
-volatile uint16_t syncPhaseAcc;
-volatile uint16_t syncPhaseInc;
-volatile uint16_t grainPhaseAcc;
-volatile uint16_t grainPhaseInc;
-volatile uint16_t grainAmp;
-volatile uint8_t grainDecay;
-volatile uint16_t grain2PhaseAcc;
-volatile uint16_t grain2PhaseInc;
-volatile uint16_t grain2Amp;
-volatile uint8_t grain2Decay;
+volatile uint16_t synth_SyncPhaseAcc;
+volatile uint16_t synth_SyncPhaseInc;
+volatile uint16_t synth_GrainPhaseAcc;
+volatile uint16_t synth_GrainPhaseInc;
+volatile uint16_t synth_GrainAmp;
+volatile uint8_t synth_GrainDecay;
+volatile uint16_t synth_Grain2PhaseAcc;
+volatile uint16_t synth_Grain2PhaseInc;
+volatile uint16_t synth_Grain2Amp;
+volatile uint8_t synth_Grain2Decay;
 
 hw_timer_t * timer = NULL;
 
@@ -28,39 +28,39 @@ void IRAM_ATTR SIGNAL() {
   uint8_t value;
   uint16_t output;
 
-  syncPhaseAcc += syncPhaseInc;
-  if (syncPhaseAcc < syncPhaseInc) {
+  synth_SyncPhaseAcc += synth_SyncPhaseInc;
+  if (synth_SyncPhaseAcc < synth_SyncPhaseInc) {
 
     // Time to start the next grain
-    grainPhaseAcc = 0;
-    grainAmp = 0x7fff;
-    grain2PhaseAcc = 0;
-    grain2Amp = 0x7fff;
+    synth_GrainPhaseAcc = 0;
+    synth_GrainAmp = 0x7fff;
+    synth_Grain2PhaseAcc = 0;
+    synth_Grain2Amp = 0x7fff;
   }
   
   // Increment the phase of the grain oscillators
-  grainPhaseAcc += grainPhaseInc;
-  grain2PhaseAcc += grain2PhaseInc;
+  synth_GrainPhaseAcc += synth_GrainPhaseInc;
+  synth_Grain2PhaseAcc += synth_Grain2PhaseInc;
 
   // Convert phase into a triangle wave
-  value = (grainPhaseAcc >> 7) & 0xff;
-  if (grainPhaseAcc & 0x8000) 
+  value = (synth_GrainPhaseAcc >> 7) & 0xff;
+  if (synth_GrainPhaseAcc & 0x8000) 
     value = ~value;
 
   // Multiply by current grain amplitude to get sample
-  output = value * (grainAmp >> 8);
+  output = value * (synth_GrainAmp >> 8);
 
   // Repeat for second grain
-  value = (grain2PhaseAcc >> 7) & 0xff;
+  value = (synth_Grain2PhaseAcc >> 7) & 0xff;
 
-  if (grain2PhaseAcc & 0x8000) 
+  if (synth_Grain2PhaseAcc & 0x8000) 
     value = ~value;
 
-  output += value * (grain2Amp >> 8);
+  output += value * (synth_Grain2Amp >> 8);
 
   // Make the grain amplitudes decay by a factor every sample (exponential decay)
-  grainAmp -= (grainAmp >> 8) * grainDecay;
-  grain2Amp -= (grain2Amp >> 8) * grain2Decay;
+  synth_GrainAmp -= (synth_GrainAmp >> 8) * synth_GrainDecay;
+  synth_Grain2Amp -= (synth_Grain2Amp >> 8) * synth_Grain2Decay;
 
   // Scale output to the available range, clipping if necessary
   output >>= 9;
@@ -131,16 +131,16 @@ void synth_update() {
     // They will cause clicks and poops in the audio.
     
     // Smooth frequency mapping
-    // syncPhaseInc = mapPhaseInc(analogRead(SYNC_CONTROL)) / 4;
+    // synth_SyncPhaseInc = mapPhaseInc(analogRead(SYNC_CONTROL)) / 4;
     
     // Stepped mapping to MIDI notes: C, Db, D, Eb, E, F...
-    // syncPhaseInc = mapMidi(analogRead(SYNC_CONTROL));
+    // synth_SyncPhaseInc = synth_MapMidi(analogRead(SYNC_CONTROL));
     
-    syncPhaseInc   = mapMidi(input_pot1());
-    grainPhaseInc  = mapPhaseInc(input_pot2()) / 2;
-    grainDecay     = input_pot3() / 8;
-    grain2PhaseInc = mapPhaseInc(input_pot4()) / 2;
-    grain2Decay    = input_pot5() / 4;
+    //synth_SyncPhaseInc   = synth_MapMidi(input_pot1()); 
+    //synth_GrainPhaseInc  = mapPhaseInc(input_pot2()) / 2;
+    //synth_GrainDecay     = input_pot3() / 8;
+    //synth_Grain2PhaseInc = mapPhaseInc(input_pot4()) / 2;
+    //synth_Grain2Decay    = input_pot5() / 4;
 }
 
 // Smooth logarithmic mapping
@@ -169,7 +169,7 @@ uint16_t midiTable[] = {
   22121,23436,24830,26306
 };
 
-uint16_t mapMidi(uint16_t input) {
+uint16_t synth_MapMidi(uint16_t input) {
   return (midiTable[(1023-input) >> 3]);
 }
 

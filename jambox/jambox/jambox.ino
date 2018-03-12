@@ -6,19 +6,15 @@ void setup() {
   matrix_init();
   input_init();
   synth_init();
+  sequencer_init();
 }
 
 void loop() {
-  
-  // jank knob output for now
+
   matrix_clear();
-  matrix_setPixel(10, input_pot1() / 128);
-  matrix_setPixel(12, input_pot2() / 128);
-  matrix_setPixel(14, input_pot3() / 128);
-  matrix_setPixel(16, input_pot4() / 128);
-  matrix_setPixel(18, input_pot5() / 128);
-  
-  // only call matrix_update once per loop
-  matrix_update();
+  sequencer_update();
   synth_update();
+  matrix_update();
+
+  // there is intentionally no delay here, delays are done inside the sequencer to allow for proper bpm timing when playing
 }
