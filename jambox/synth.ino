@@ -1,7 +1,7 @@
 #include "esp32-hal-timer.h"
 #include "driver/i2s.h"
 
-#define SAMPLE_RATE                 16000
+#define SAMPLE_RATE                 32000
 #define I2S_PORT_NUMBER             0
 #define TIMER_NUMBER                0
 #define ESP32_F_CPU                 80000000  // the actual speed of the processor
@@ -81,7 +81,7 @@ void synth_init() {
       .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),  // transmitting
       .sample_rate = SAMPLE_RATE,                           // sample rate
       .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,         // 16 bits per sample
-      .channel_format = I2S_CHANNEL_FMT_ALL_RIGHT,          // mono
+      .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,         // stereo
       .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB), // typical I2S format, Most significant bit first
       .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,             // higher priority
       .dma_buf_count = 8,                                   // honestly, these are just whatever I found initially.
@@ -136,7 +136,7 @@ void synth_update() {
     // Stepped mapping to MIDI notes: C, Db, D, Eb, E, F...
     // syncPhaseInc = mapMidi(analogRead(SYNC_CONTROL));
     
-    syncPhaseInc   = mapMidi(input_pot1());
+    syncPhaseInc   = mapPhaseInc(input_pot1());
     grainPhaseInc  = mapPhaseInc(input_pot2()) / 2;
     grainDecay     = input_pot3() / 8;
     grain2PhaseInc = mapPhaseInc(input_pot4()) / 2;
