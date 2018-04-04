@@ -7,17 +7,6 @@
 #define ESP32_F_CPU                 80000000  // the actual speed of the processor
 #define AUDIO_INTERRUPT_PRESCALER   80
 
-volatile uint16_t synth_SyncPhaseAcc;
-volatile uint16_t synth_SyncPhaseInc;
-volatile uint16_t synth_GrainPhaseAcc;
-volatile uint16_t synth_GrainPhaseInc;
-volatile uint16_t synth_GrainAmp;
-volatile uint8_t synth_GrainDecay;
-volatile uint16_t synth_Grain2PhaseAcc;
-volatile uint16_t synth_Grain2PhaseInc;
-volatile uint16_t synth_Grain2Amp;
-volatile uint8_t synth_Grain2Decay;
-
 hw_timer_t * timer = NULL;
 
 void IRAM_ATTR SIGNAL() {
@@ -136,11 +125,11 @@ void synth_update() {
     // Stepped mapping to MIDI notes: C, Db, D, Eb, E, F...
     // synth_SyncPhaseInc = synth_MapMidi(analogRead(SYNC_CONTROL));
     
-    //synth_SyncPhaseInc   = synth_MapMidi(input_pot1()); 
-    //synth_GrainPhaseInc  = mapPhaseInc(input_pot2()) / 2;
-    //synth_GrainDecay     = input_pot3() / 8;
-    //synth_Grain2PhaseInc = mapPhaseInc(input_pot4()) / 2;
-    //synth_Grain2Decay    = input_pot5() / 4;
+    synth_SyncPhaseInc   = synth_MapMidi(input_pot1()); 
+    synth_GrainPhaseInc  = mapPhaseInc(input_pot2()) / 2;
+    synth_GrainDecay     = input_pot3() / 8;
+    synth_Grain2PhaseInc = mapPhaseInc(input_pot4()) / 2;
+    synth_Grain2Decay    = input_pot5() / 4;
 }
 
 // Smooth logarithmic mapping

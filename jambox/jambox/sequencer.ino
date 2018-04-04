@@ -46,8 +46,7 @@ int currentFuncion = 0;
 int currentSetting = 0;
 int currentFunctionVal = 0;
 int currentSettingVal = 0;
-int index; 
-int index2; 
+int lastSettingVal = 0;
 int bpm;
 int bpm32ndMSDelay;
 bool blinkToggle = false;
@@ -98,9 +97,18 @@ void sequencer_update() {
 
 void sequencer_update_normal_mode() {
 
-    int newTrack = (int)(input_pot1() / 127);
-    int newStep = (int)(input_pot2() / 32);
+    Serial.println("- ");
+    
+    int newTrack = floor(input_pot1() / 146.142);
+    int newStep = floor(input_pot2() / 32);
     int newVal = input_pot3();
+
+    Serial.print(newTrack);
+    Serial.print(", ");
+    Serial.print(newStep);
+    Serial.print(", ");
+    Serial.print(newVal);
+    Serial.print(" ");
 
     if (input_button1() == HIGH)
         newTrack --;
@@ -138,12 +146,13 @@ void sequencer_update_normal_mode() {
     }
 
     // if they are changing vals, show which on screen
-    if (newVal != steps[currentStep][currentTrack]) {
+    if (newVal != lastSettingVal) {
 
         // TODO: show new value on oled
         steps[currentStep][currentTrack] = newVal;
+        lastSettingVal = newVal;
     }
-
+/*
     // have they tweaked the function knob?
     if (input_pot4() != currentFunctionVal)
         sequencer_change_mode(sequencer_mode_func);
@@ -151,14 +160,18 @@ void sequencer_update_normal_mode() {
     // have they tweaked the setting knob?
     if (input_pot5() != currentSettingVal)
         sequencer_change_mode(sequencer_mode_set);
-
+*/
+    Serial.print("D1");
+    Serial.print(" ");
     // mark steps with any values on this track
-    for (index = 0; index < 32; index ++)
+    for (int index = 0; index < 32; index ++)
         if (steps[index][currentTrack] != 0)
             matrix_setPixel(index, currentTrack);
 
+    Serial.print("D2");
+    Serial.print(" ");
     // mark all other tracks showing which step is selected
-    for (index = 0; index < 8; index ++)
+    for (int index = 0; index < 8; index ++)
         if (index != currentTrack)
             matrix_setPixel(currentStep, index);
 
@@ -166,8 +179,9 @@ void sequencer_update_normal_mode() {
 }
 
 void sequencer_update_play_mode() {
+  return;
 
-    for (index = 0; index < 8; index++) {
+    for (int index = 0; index < 8; index++) {
 
         // push playhead 
         trackPlayHead[index] ++;
@@ -184,7 +198,7 @@ void sequencer_update_play_mode() {
             matrix_setPixel(displayStep, index);
 
         // draw the rest of the track
-        for (index2 = 0; index2 < 32; index2 ++)
+        for (int index2 = 0; index2 < 32; index2 ++)
             if (steps[index2][index] != 0 && index2 != displayStep)
                 matrix_setPixel(index, currentTrack);
 
@@ -193,7 +207,7 @@ void sequencer_update_play_mode() {
         switch(index) {
 
             case 0: 
-                synth_SyncPhaseInc = getActualTrackValue(index, steps[index2][index]);
+                synth_SyncPhaseInc = getActualTrackValue(index, steps[trackPlayHead[index]][index]);
                 break;
 
             case 1:
@@ -201,11 +215,11 @@ void sequencer_update_play_mode() {
                 break;
 
             case 2: 
-                synth_GrainPhaseInc = getActualTrackValue(index, steps[index2][index]);
+                synth_GrainPhaseInc = getActualTrackValue(index, steps[trackPlayHead[index]][index]);
                 break;
 
             case 3: 
-                synth_GrainDecay = getActualTrackValue(index, steps[index2][index]);
+                synth_GrainDecay = getActualTrackValue(index, steps[trackPlayHead[index]][index]);
                 break;
 
             case 4: 
@@ -213,11 +227,11 @@ void sequencer_update_play_mode() {
                 break;
 
             case 5: 
-                synth_Grain2PhaseInc = getActualTrackValue(index, steps[index2][index]);
+                synth_Grain2PhaseInc = getActualTrackValue(index, steps[trackPlayHead[index]][index]);
                 break;
 
             case 6: 
-                synth_Grain2Decay = getActualTrackValue(index, steps[index2][index]);
+                synth_Grain2Decay = getActualTrackValue(index, steps[trackPlayHead[index]][index]);
                 break;
 
             case 7: 
@@ -311,6 +325,9 @@ void sequencer_activate_setting(int which) {
 }
 
 void sequencer_change_mode(int which) {
+
+    Serial.print("Change mode ");
+    Serial.println(which);
 
     switch(which) {
 
@@ -444,7 +461,7 @@ int getActualTrackValue(int track, int step) {
             return rawValue / 4;
             break;
 
-        case 5:
+        case 7:
             // Osc 2 efx
             // TODO: implement osc 2 efx
             return 0;
